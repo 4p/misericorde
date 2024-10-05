@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miséricorde - Update Manager for Discord</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c2f33;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #7289da;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #99aab5;
+            font-size: 1.4em;
+        }
+        p, ul {
+            color: #b9bbbe;
+        }
+        code {
+            background-color: #23272a;
+            color: #ffffff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: block;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        a {
+            color: #7289da;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #99aab5;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Miséricorde - Discord Auto-Updater</h1>
+    
+    <p><strong>Miséricorde</strong> is a simple and lightweight script that keeps your Discord installation up-to-date on Debian-based systems. Forget manual updates — Miséricorde handles everything for you.</p>
+    
+    <h2>How It Works</h2>
+    <p>This script does the following:</p>
+    <ul>
+        <li>Checks if you're running the latest version of Discord.</li>
+        <li>Downloads and installs the latest version if needed.</li>
+        <li>Stops Discord gracefully (if running) to install updates.</li>
+        <li>Sets up a cron job to check for updates every hour.</li>
+    </ul>
+
+    <h2>Install Miséricorde</h2>
+    <p>Ready to install? Run the following command in your terminal:</p>
+    <code>curl -s https://4p.github.io/misericorde/install.sh | bash</code>
+
+    <h2>What Happens After Install?</h2>
+    <ul>
+        <li>The Miséricorde script is installed in your <code>~/.misericorde/</code> directory.</li>
+        <li>A cron job is set up to automatically check for Discord updates every hour.</li>
+        <li>It keeps Discord up-to-date without you lifting a finger.</li>
+    </ul>
+
+    <h2>Supported Systems</h2>
+    <p>Miséricorde is designed for <strong>Debian-based systems</strong> like Debian, Ubuntu, or Linux Mint.</p>
+
+    <h2>Need Help?</h2>
+    <p>If you run into any issues, feel free to visit the <a href="https://github.com/4p/misericorde" target="_blank">GitHub repository</a> for support or to report bugs.</p>
+
+    <div class="footer">
+        <p>Created by 4p. Keeping Discord updated, so you don’t have to. 🚀</p>
+    </div>
+</body>
+</html>
