@@ -13,8 +13,8 @@ fi
 # Create the installation directory if it doesn't exist
 mkdir -p "$INSTALL_DIR"
 
-# Download the main script from the GitHub repository
-curl -o "$INSTALL_DIR/misericorde.sh" "$SCRIPT_URL"
+# Download the main script from the GitHub repository silently
+curl -s -o "$INSTALL_DIR/misericorde.sh" "$SCRIPT_URL" >/dev/null 2>&1
 
 # Make the script executable
 chmod +x "$INSTALL_DIR/misericorde.sh"
