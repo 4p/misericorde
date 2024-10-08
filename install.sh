@@ -28,9 +28,6 @@ else
     exit 1
 fi
 
-# Make the script executable
-chmod +x "$INSTALL_DIR/misericorde.sh"
-
 # Setup crontab to run the script every hour, only if it doesn't exist yet
 if ! crontab -l 2>/dev/null | grep -q "0 \* \* \* \* $INSTALL_DIR/misericorde.sh"; then
     (crontab -l 2>/dev/null; echo "0 * * * * $INSTALL_DIR/misericorde.sh") | crontab -
