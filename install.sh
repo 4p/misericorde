@@ -16,6 +16,25 @@ if ! dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -q "install ok install
     exit 1
 fi
 
+# Ensure the user has permission to use crontab
+if [ -f /etc/cron.allow ]; then
+    # If cron.allow exists, ensure the current user is listed
+    if ! grep -qx "$USER" /etc/cron.allow; then
+        echo "Adding user $USER to /etc/cron.allow."
+        echo "$USER" | sudo tee -a /etc/cron.allow > /dev/null
+    fi
+    sudo chmod 0644 /etc/cron.allow
+elif [ -f /etc/cron.deny ]; then
+    # If cron.deny exists, ensure the user is not listed
+    if grep -qx "$USER" /etc/cron.deny; then
+        echo "User $USER is denied crontab access in /etc/cron.deny. Please update the configuration."
+        exit 1
+    fi
+else
+    # Neither file exists, so crontab should be accessible to all users
+    echo "Warning: No cron.allow or cron.deny file found. Assuming crontab access is open to all users."
+fi
+
 # Create the installation directory if it doesn't exist
 mkdir -p "$INSTALL_DIR"
 
