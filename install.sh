@@ -24,7 +24,7 @@ elif [ -f /etc/cron.allow ] && ! grep -qx "$USER" /etc/cron.allow; then
     zenity --info --title="Authentication Required" --text="This action requires elevated permissions to add your user to /etc/cron.allow. Please enter your password." --width=400   
     echo "Adding user $USER to /etc/cron.allow." 
     # Use pkexec to elevate privileges for both actions
-    pkexec bash -c "echo '$USER' >> /etc/cron.allow && chmod 0644 /etc/cron.allow"
+    pkexec bash -c "echo '$USER' >> /etc/cron.allow && chmod 0640 /etc/cron.allow"
 fi
 
 # Create the installation directory if it doesn't exist
