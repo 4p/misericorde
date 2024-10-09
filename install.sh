@@ -16,6 +16,17 @@ if ! dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -q "install ok install
     exit 1
 fi
 
+# Ensure the user has permission to use crontab
+if [ -f /etc/cron.deny ] && grep -qx "$USER" /etc/cron.deny; then
+    zenity --error --title="Access Denied" --text="User $USER is denied crontab access in /etc/cron.deny. Please update the configuration." --width=400
+    exit 1
+elif [ -f /etc/cron.allow ] && ! grep -qx "$USER" /etc/cron.allow; then
+    zenity --info --title="Authentication Required" --text="This action requires elevated permissions to add your user to /etc/cron.allow. Please enter your password." --width=400   
+    echo "Adding user $USER to /etc/cron.allow." 
+    # Use pkexec to elevate privileges for both actions
+    pkexec bash -c "echo '$USER' >> /etc/cron.allow && chmod 0644 /etc/cron.allow"
+fi
+
 # Create the installation directory if it doesn't exist
 mkdir -p "$INSTALL_DIR"
 
@@ -27,6 +38,9 @@ else
     echo "Failed to download the script. Please check your internet connection or the script URL."
     exit 1
 fi
+
+# Make the script executable
+chmod +x "$INSTALL_DIR/misericorde.sh"
 
 # Setup crontab to run the script every hour, only if it doesn't exist yet
 if ! crontab -l 2>/dev/null | grep -q "0 \* \* \* \* $INSTALL_DIR/misericorde.sh"; then
