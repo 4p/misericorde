@@ -61,12 +61,30 @@ check_discord_running() {
 
 # Function to stop Discord gracefully
 stop_discord() {
-    pkill -SIGTERM Discord
-    sleep 2
+    log_debug "Attempting to stop Discord gracefully..."
+    pkill -SIGTERM Discord  # Send SIGTERM to allow Discord to exit gracefully
+    
+    # Wait for up to 5 seconds for Discord to close on its own
+    for i in {1..5}; do
+        if ! pgrep Discord > /dev/null; then
+            log_debug "Discord closed gracefully."
+            return 0
+        fi
+        sleep 1
+    done
+
+    # If Discord is still running after 5 seconds, force kill it
+    log_debug "Discord did not close gracefully. Sending SIGKILL..."
+    pkill -SIGKILL Discord
+
+    # Check again if the force kill worked
     if pgrep Discord > /dev/null; then
-        # If Discord is still running, force kill it
-        pkill -SIGKILL Discord
+        log_debug "Failed to stop Discord even after SIGKILL. Exiting with error."
+        zenity --error --title="Discord Stop Error" --text="Failed to stop Discord process." --width=300
+        exit 1
     fi
+
+    log_debug "Discord forcefully terminated."
 }
 
 # Function to download and install Discord with progress
@@ -78,7 +96,7 @@ update_discord() {
     if [ "$DEBUG" = true ]; then
         wget -O /tmp/discord.deb "$DISCORD_DOWNLOAD_URL"
     else
-        wget -O /tmp/discord.deb "$DISCORD_DOWNLOAD_URL" > /dev/null 2>&1
+        wget -q -O /tmp/discord.deb "$DISCORD_DOWNLOAD_URL" > /dev/null 2>&1
     fi
 
     if [ $? -ne 0 ]; then
@@ -91,7 +109,7 @@ update_discord() {
         zenity --question --title="Discord Running" --text="Discord is currently running. Do you want to stop it to proceed with the update?" --width=300
         if [ $? -eq 0 ]; then
             stop_discord
-            zenity --info --title="Discord Stopped" --text="Discord has been stopped." --width=300
+            notify_user "Discord has been stopped."
             log_debug "Discord has been stopped."
         else
             zenity --info --title="Update Canceled" --text="Update canceled because Discord is still running." --width=300
