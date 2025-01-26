@@ -65,7 +65,7 @@
         <li>Checks if you're running the latest version of Discord.</li>
         <li>Downloads and installs the latest version if needed.</li>
         <li>Stops Discord gracefully (if running) to install updates.</li>
-        <li>Sets up a cron job to check for updates every hour.</li>
+        <li>Uses a <strong>user-level systemd timer</strong> to check for updates every 5 hours (customizable).</li>
     </ul>
 
     <h2>📥 Install Miséricorde</h2>
@@ -75,12 +75,27 @@
     <h2>🛠️ What Happens After Install?</h2>
     <ul>
         <li>The Miséricorde script is installed in your <code>~/.misericorde/</code> directory.</li>
-        <li>A cron job is set up to automatically check for Discord updates every hour.</li>
+        <li>A <strong>user-level systemd timer</strong> is set up to automatically check for Discord updates every 5 hours (default setting).</li>
         <li>It keeps Discord up-to-date without you lifting a finger.</li>
     </ul>
 
     <h2>🖥️ Supported Systems</h2>
     <p>Miséricorde is designed for <strong>Debian-based systems</strong> like Debian, Ubuntu, or Linux Mint.</p>
+
+    <h2>Customizing the Update Interval</h2>
+    <p>By default, Miséricorde checks for updates every 5 hours. To change this interval:</p>
+    <ul>
+        <li>Locate the systemd timer file in <code>~/.config/systemd/user/misericorde.timer</code></li>
+        <li>Edit the file to modify the <code>OnCalendar</code> value. For example:</li>
+        <ul>
+            <li><strong>Run every minute</strong> (for testing): <code>OnCalendar=*-*-* *:*</code></li>
+            <li><strong>Run every hour:</strong> <code>OnCalendar=hourly</code></li>
+            <li><strong>Run every day at midnight:</strong> <code>OnCalendar=*-*-* 00:00:00</code></li>
+        </ul>
+        <li>Reload and restart the timer with:</li>
+        <code>systemctl --user daemon-reload</code>
+        <code>systemctl --user restart misericorde.timer</code>
+    </ul>
 
     <h2>❓ Need Help?</h2>
     <p>If you run into any issues, feel free to visit the <a href="https://github.com/4p/misericorde" target="_blank">GitHub repository</a> for support or to report bugs.</p>

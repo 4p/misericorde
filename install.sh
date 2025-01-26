@@ -1,12 +1,19 @@
 #!/bin/bash
 
-# Define the directory where the script will be stored
+# --- Configuration ---
 INSTALL_DIR="$HOME/.misericorde"
 SCRIPT_URL="https://raw.githubusercontent.com/4p/misericorde/main/misericorde.sh"
+USER_SYSTEMD_DIR="$HOME/.config/systemd/user"
+
+# --- Basic checks ---
+if ! command -v dpkg-query >/dev/null 2>&1; then
+    echo "dpkg-query is not available. This script is meant for Debian-based systems."
+    exit 1
+fi
 
 # Check if Discord is installed
 if ! dpkg-query -W -f='${Status}' discord 2>/dev/null | grep -q "install ok installed"; then
-    echo "Discord is not installed. Please install Discord first before using Miséricorde."
+    echo "Discord is not installed. Please install Discord before using Miséricorde."
     exit 1
 fi
 
@@ -16,32 +23,72 @@ if ! dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -q "install ok install
     exit 1
 fi
 
-# Ensure the user has permission to use crontab
-if [ -f /etc/cron.deny ] && grep -qx "$USER" /etc/cron.deny; then
-    zenity --error --title="Access Denied" --text="User $USER is denied crontab access in /etc/cron.deny. Please update the configuration." --width=400
+# Check if systemd is available
+if ! pidof systemd >/dev/null; then
+    echo "systemd does not seem to be running. This installation requires systemd."
     exit 1
-elif [ -f /etc/cron.allow ] && ! grep -qx "$USER" /etc/cron.allow; then
-    zenity --info --title="Authentication Required" --text="This action requires elevated permissions to add your user to /etc/cron.allow. Please enter your password." --width=400   
-    echo "Adding user $USER to /etc/cron.allow." 
-    # Use pkexec to elevate privileges for both actions
-    pkexec bash -c "echo '$USER' >> /etc/cron.allow && chmod 0644 /etc/cron.allow"
 fi
 
-# Create the installation directory if it doesn't exist
-mkdir -p "$INSTALL_DIR"
+# Detect environment variables (for Zenity, etc.)
+DISPLAY_VAR=$(echo "$DISPLAY")
+XAUTHORITY_VAR=$(echo "$XAUTHORITY")
+DBUS_SESSION_VAR=$(echo "$DBUS_SESSION_BUS_ADDRESS")
 
-# Download the main script from the GitHub repository silently
+if [ -z "$DISPLAY_VAR" ] || [ -z "$XAUTHORITY_VAR" ] || [ -z "$DBUS_SESSION_VAR" ]; then
+    echo "Failed to detect DISPLAY, XAUTHORITY, or DBUS_SESSION_BUS_ADDRESS."
+    echo "Make sure you're running this script from a GUI session."
+    exit 1
+fi
+
+# --- Create installation directory and download main script ---
+mkdir -p "$INSTALL_DIR"
 if curl -s -o "$INSTALL_DIR/misericorde.sh" "$SCRIPT_URL"; then
-    # Make the script executable
     chmod +x "$INSTALL_DIR/misericorde.sh"
 else
-    echo "Failed to download the script. Please check your internet connection or the script URL."
+    echo "Failed to download the misericorde.sh script from GitHub."
     exit 1
 fi
 
-# Setup crontab to run the script every hour, only if it doesn't exist yet
-if ! crontab -l 2>/dev/null | grep -q "0 \* \* \* \* $INSTALL_DIR/misericorde.sh"; then
-    (crontab -l 2>/dev/null; echo "0 * * * * $INSTALL_DIR/misericorde.sh") | crontab -
-fi
+# --- Create user-level systemd directories if needed ---
+mkdir -p "$USER_SYSTEMD_DIR"
 
-echo "Miséricorde has been installed and will check for Discord updates every hour."
+# --- Create the service content ---
+SERVICE_PATH="$USER_SYSTEMD_DIR/misericorde.service"
+TIMER_PATH="$USER_SYSTEMD_DIR/misericorde.timer"
+
+SERVICE_CONTENT="[Unit]
+Description=Miséricorde - Discord Auto-Updater (User Session)
+
+[Service]
+Type=oneshot
+ExecStart=$INSTALL_DIR/misericorde.sh
+"
+
+TIMER_CONTENT="[Unit]
+Description=Run Miséricorde (Discord Auto-Updater) every 5 hours
+
+[Timer]
+OnCalendar=*-*-* 00/5:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"
+
+# --- Write service and timer files to ~/.config/systemd/user ---
+echo "$SERVICE_CONTENT" > "$SERVICE_PATH"
+echo "$TIMER_CONTENT"   > "$TIMER_PATH"
+
+# --- Enable and start the timer in the user session ---
+systemctl --user daemon-reload
+systemctl --user enable misericorde.timer
+systemctl --user start misericorde.timer
+
+# --- Final message ---
+echo "Miséricorde has been installed for your user and will check for Discord updates every 5 hours."
+echo "Service file: $SERVICE_PATH"
+echo "Timer file:   $TIMER_PATH"
+echo "Script path:  $INSTALL_DIR/misericorde.sh"
+echo
+echo "Note: This user-level timer runs only while you are logged in."
+echo "If you log out, the service won’t run until you log back in."
