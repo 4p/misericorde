@@ -14,8 +14,19 @@ check_debian_os() {
     fi
 }
 
+# Function to check for internet connectivity
+check_internet_connection() {
+    if ! ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1; then
+        zenity --error --title="No Internet Connection" --text="Internet connection is required to check for updates." --width=300
+        exit 1
+    fi
+}
+
 # Check if the system is Debian-based
 check_debian_os
+
+# Check for internet connectivity
+check_internet_connection
 
 # Base URL for Discord API and download
 DISCORD_API_BASE_URL="https://discord.com/api"
@@ -62,9 +73,8 @@ check_discord_running() {
 # Function to stop Discord gracefully
 stop_discord() {
     log_debug "Attempting to stop Discord gracefully..."
-    pkill -SIGTERM Discord  # Send SIGTERM to allow Discord to exit gracefully
-    
-    # Wait for up to 5 seconds for Discord to close on its own
+    pkill -SIGTERM Discord
+
     for i in {1..5}; do
         if ! pgrep Discord > /dev/null; then
             log_debug "Discord closed gracefully."
@@ -73,11 +83,9 @@ stop_discord() {
         sleep 1
     done
 
-    # If Discord is still running after 5 seconds, force kill it
     log_debug "Discord did not close gracefully. Sending SIGKILL..."
     pkill -SIGKILL Discord
 
-    # Check again if the force kill worked
     if pgrep Discord > /dev/null; then
         log_debug "Failed to stop Discord even after SIGKILL. Exiting with error."
         zenity --error --title="Discord Stop Error" --text="Failed to stop Discord process." --width=300
@@ -89,7 +97,6 @@ stop_discord() {
 
 # Function to download and install Discord with progress
 update_discord() {
-    # Step 1: Downloading Discord
     log_debug "Downloading latest Discord version..."
     update_progress 50 "Downloading Discord..."
 
@@ -104,7 +111,6 @@ update_discord() {
         exit 1
     fi
 
-    # Step 2: Stopping Discord if it's running
     if check_discord_running; then
         zenity --question --title="Discord Running" --text="Discord is currently running. Do you want to stop it to proceed with the update?" --width=300
         if [ $? -eq 0 ]; then
@@ -118,7 +124,6 @@ update_discord() {
         fi
     fi
 
-    # Step 3: Installing Discord
     log_debug "Installing downloaded Discord package..."
     update_progress 75 "Installing Discord..."
 
@@ -143,18 +148,14 @@ update_discord() {
 installed_version=$(get_installed_version)
 latest_version=$(get_latest_version)
 
-# Log the versions for debugging
 log_debug "Installed version: $installed_version"
 log_debug "Latest version: $latest_version"
 
-# Check if we need to update Discord
 if [ "$installed_version" == "$latest_version" ]; then
     exit 0
 else
-    # Notify the user that an update is available
     notify_user "New Discord version available: $latest_version. You are running version $installed_version."
 
-    # Prompt the user with a Zenity confirmation dialog
     zenity --question --title="Discord Update Available" --text="Current version: $installed_version\nLatest version: $latest_version\nDo you want to update now?" --width=300
     if [ $? -eq 0 ]; then
         (
